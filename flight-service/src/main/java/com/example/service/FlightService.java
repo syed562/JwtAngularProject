@@ -8,16 +8,16 @@ import org.springframework.stereotype.Service;
 
 import com.example.exception.ResourceNotFoundException;
 import com.example.model.Flight;
-import com.example.repository.FlightRepository;
+import com.example.repository.FlightRepo;
 import com.example.request.FlightRequest;
 import com.example.request.SearchRequest;
 
 @Service
 public class FlightService {
 
-	private final FlightRepository flightRepository;
+	private final FlightRepo flightRepository;
 
-	public FlightService(FlightRepository flightRepository) {
+	public FlightService(FlightRepo flightRepository) {
 		this.flightRepository = flightRepository;
 	}
 

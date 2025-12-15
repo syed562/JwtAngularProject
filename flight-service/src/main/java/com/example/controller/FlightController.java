@@ -23,32 +23,32 @@ import jakarta.validation.Valid;
 @RequestMapping("flight")
 class FlightController {
 
-	private final FlightService flightService;
+	private final FlightService fs;
 
 	public FlightController(FlightService flightService) {
-		this.flightService = flightService;
+		fs = flightService;
 	}
 
 	@PostMapping("register")
 	public ResponseEntity<Integer> registerFlightByID(@Valid @RequestBody FlightRequest req) {
-		return flightService.registerFlightByIDService(req);
+		return fs.registerFlightByIDService(req);
 
 	}
 
 	@GetMapping("getFlightById/{id}")
 	public ResponseEntity<Flight> getByID(@PathVariable int id) throws ResourceNotFoundException {
-		return flightService.getByIDService(id);
+		return fs.getByIDService(id);
 	}
 
 	@PostMapping("getByOriginDestination")
 	public ResponseEntity<List<Flight>> getByOriginAndDestination(@Valid @RequestBody SearchRequest req) {
-		return flightService.getByOriginAndDestinationService(req);
+		return fs.getByOriginAndDestinationService(req);
 
 	}
 
 	@DeleteMapping("delete/{id}")
 	public ResponseEntity<String> deleteById(@PathVariable int id) throws ResourceNotFoundException {
-		return flightService.deleteByIDService(id);
+		return fs.deleteByIDService(id);
 	}
 
 }

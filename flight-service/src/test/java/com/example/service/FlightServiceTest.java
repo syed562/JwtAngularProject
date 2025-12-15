@@ -19,7 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.example.exception.ResourceNotFoundException;
 import com.example.model.Airline;
 import com.example.model.Flight;
-import com.example.repository.FlightRepository;
+import com.example.repository.FlightRepo;
 import com.example.request.FlightRequest;
 import com.example.request.SearchRequest;
 
@@ -27,7 +27,7 @@ import com.example.request.SearchRequest;
 class FlightServiceTest {
 
 	@Mock
-	private FlightRepository flightRepository;
+	private FlightRepo flightRepository;
 
 	@InjectMocks
 	private FlightService flightService;

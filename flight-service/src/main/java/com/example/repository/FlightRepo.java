@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import com.example.model.Flight;
 
 @Repository
-public interface FlightRepository extends JpaRepository<Flight, Integer> {
+public interface FlightRepo extends JpaRepository<Flight, Integer> {
 	List<Flight> findByOrigin(String origin);
 
 	List<Flight> findByDestination(String destination);
