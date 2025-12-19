@@ -73,7 +73,7 @@ class FlightControllerTest {
 	@Test
 	void testSearch() throws Exception {
 		Flight flight = createFlight();
-		SearchRequest req = new SearchRequest("DEL", "HYD");
+		SearchRequest req = new SearchRequest("DEL", "HYD", LocalDateTime.of(2025, 12, 18, 0, 0));
 
 		when(flightService.getByOriginAndDestinationService(any()))
 				.thenReturn(org.springframework.http.ResponseEntity.ok(Arrays.asList(flight)));

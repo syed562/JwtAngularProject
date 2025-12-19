@@ -26,7 +26,7 @@ public class PassengerService {
 				.orElseThrow(() -> new ResourceNotFoundException("Passenger not found"));
 		PassengerDetailsResponse passengerDetails = PassengerDetailsResponse.builder().email(passenger.getEmail())
 				.phoneNum(passenger.getPhoneNumber()).name(passenger.getName()).city(passenger.getAddress().getCity())
-				.state(passenger.getAddress().getState()).build();
+				.state(passenger.getAddress().getState()).houseNo(passenger.getAddress().getHouseNo()).build();
 		return new ResponseEntity<>(passengerDetails, HttpStatus.OK);
 
 	}

@@ -62,6 +62,7 @@ public class JwtUtils {
 		return ResponseCookie.from(jwtCookieName, "").path("/").maxAge(0).httpOnly(true).build();
 	}
 
+	// if token is in cookie, return it, else check header
 	public String getJwtFromCookies(HttpServletRequest request) {
 		Cookie cookie = WebUtils.getCookie(request, jwtCookieName);
 		if (cookie != null)

@@ -6,7 +6,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,24 +16,25 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "tickets", uniqueConstraints = { @UniqueConstraint(columnNames = { "flight_id", "seat_no" }) })
+@Table(name = "tickets")
 public class Ticket {
+
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int ticketId;
-	@Column(name = "pnr", unique = true)
+
+	@Column(name = "pnr", unique = true, nullable = false)
 	private String pnr;
 
-	@Column(name = "seat_no")
-	private String seatNo;
-
-	@Column(name = "flight_id")
+	@Column(name = "flight_id", nullable = false)
 	private int flightId;
 
-	@Column(name = "passenger_id")
+	@Column(name = "passenger_id", nullable = false)
 	private int passengerId;
+
+	@Column(name = "number_of_seats", nullable = false)
+	private int numberOfSeats;
 
 	@Column(name = "booked")
 	private boolean booked;
-
 }

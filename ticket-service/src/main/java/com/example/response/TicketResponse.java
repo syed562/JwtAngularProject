@@ -12,11 +12,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TicketResponse {
+
 	private String name;
 	private String email;
 	private String origin;
 	private String destination;
 	private String pnr;
+
+	private int numberOfSeats;
+
 	private LocalDateTime departureTime;
 	private LocalDateTime arrivalTime;
 }

@@ -16,6 +16,8 @@ public class BookTicketRequest {
 	private Integer flightId;
 	@NotNull
 	private Integer passengerId;
+//	@NotNull
+//	private String seatNo;
 	@NotNull
-	private String seatNo;
+	private Integer numberOfSeats;
 }

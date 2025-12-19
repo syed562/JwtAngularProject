@@ -15,5 +15,6 @@ public class PassengerDetailsResponse {
 	private String phoneNum;
 	private String city;
 	private String state;
+	private String houseNo;
 
 }

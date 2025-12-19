@@ -6,6 +6,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,11 +24,14 @@ public class WebSecurityConfig {
 		this.authJwtFilter = authJwtFilter;
 	}
 
+	// provides encode method for hashing passwords
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
 
+	// provides authentication manager bean used to pass unauthenticated token to
+	// authenticate
 	@Bean
 	public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
 		return authConfig.getAuthenticationManager();
@@ -35,11 +39,13 @@ public class WebSecurityConfig {
 
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-		http.csrf(csrf -> csrf.disable()).anonymous(anon -> anon.disable())
+		http.csrf(csrf -> csrf.disable())
 				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/signin", "/api/auth/signup").permitAll()
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers("/api/auth/signin", "/api/auth/signup", "/api/auth/signout").permitAll()
 						.requestMatchers("/api/auth/me").authenticated().anyRequest().authenticated())
-				.addFilterBefore(authJwtFilter, UsernamePasswordAuthenticationFilter.class);
+				.addFilterBefore(authJwtFilter, UsernamePasswordAuthenticationFilter.class)
+				.httpBasic(AbstractHttpConfigurer::disable);
 
 		return http.build();
 	}

@@ -26,5 +26,7 @@ public class Flight {
 	private double price;
 	private LocalDateTime departureTime;
 	private LocalDateTime arrivalTime;
+	private int totalSeats;
+	private int availableSeats;
 
 }

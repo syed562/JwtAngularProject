@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FlightRequest {
+
 	@NotNull
 	private Airline airline;
 	@NotNull
@@ -31,5 +32,11 @@ public class FlightRequest {
 	@NotNull
 	@Future
 	private LocalDateTime arrivalTime;
+	@NotNull
+	@Positive
+	private int totalSeats;
+//	@NotNull
+//	@Positive
+//	private int availableSeats;
 
 }

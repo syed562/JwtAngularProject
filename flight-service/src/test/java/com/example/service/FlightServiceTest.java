@@ -19,7 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.example.exception.ResourceNotFoundException;
 import com.example.model.Airline;
 import com.example.model.Flight;
-import com.example.repository.FlightRepo;
+import com.example.repository.FlightRepository;
 import com.example.request.FlightRequest;
 import com.example.request.SearchRequest;
 
@@ -27,7 +27,7 @@ import com.example.request.SearchRequest;
 class FlightServiceTest {
 
 	@Mock
-	private FlightRepo flightRepository;
+	private FlightRepository flightRepository;
 
 	@InjectMocks
 	private FlightService flightService;
@@ -76,9 +76,11 @@ class FlightServiceTest {
 	@Test
 	void testSearchByOriginDestination() {
 		Flight flight = createFlight();
-		SearchRequest req = new SearchRequest("DEL", "HYD");
+		SearchRequest req = new SearchRequest("DEL", "HYD", LocalDateTime.of(2025, 12, 18, 0, 0));
 
-		when(flightRepository.findByOriginAndDestination("DEL", "HYD")).thenReturn(Arrays.asList(flight));
+		when(flightRepository.findByOriginAndDestinationAndDepartureTimeBetween("DEL", "HYD",
+				LocalDateTime.of(2025, 12, 18, 0, 0), LocalDateTime.of(2025, 12, 18, 23, 59)))
+				.thenReturn(Arrays.asList(flight));
 
 		var response = flightService.getByOriginAndDestinationService(req);
 		assertEquals(200, response.getStatusCode().value());

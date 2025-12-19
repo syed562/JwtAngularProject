@@ -10,9 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.exception.ResourceNotFoundException;
-import com.example.exception.SeatAlreadyBookedException;
 import com.example.feign.FlightInterface;
 import com.example.feign.PassengerInterface;
 import com.example.model.Ticket;
@@ -43,31 +43,51 @@ public class TicketService {
 
 	private static final Logger logger = LoggerFactory.getLogger(TicketService.class);
 
-	public ResponseEntity<String> bookTicketService(BookTicketRequest req) {
-		boolean exists = ticketRepository.existsByFlightIdAndSeatNo(req.getFlightId(), req.getSeatNo());
+	@Transactional
+	public ResponseEntity<String> deleteTicketById(int ticketId) {
 
-		if (exists) {
-			throw new SeatAlreadyBookedException("Seat already booked for this flight!");
+		Ticket ticket = ticketRepository.findById(ticketId)
+				.orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+
+		if (!ticket.isBooked()) {
+			return ResponseEntity.ok("Ticket already cancelled");
 		}
+
+		// 1. Increase seats in Flight Service
+		flightInterface.releaseSeats(ticket.getFlightId(), ticket.getNumberOfSeats());
+
+		// 2. Mark ticket cancelled (OR delete – your choice)
+		ticket.setBooked(false);
+		ticketRepository.save(ticket);
+
+		return ResponseEntity.ok("Ticket cancelled successfully");
+	}
+
+	@Transactional
+	public ResponseEntity<String> bookTicketService(BookTicketRequest req) {
+
+		// 1. Reduce seats in Flight Service FIRST
+		if (req.getNumberOfSeats() <= 0) {
+		    throw new IllegalArgumentException("Number of seats must be positive");
+		}
+
+		flightInterface.reserveSeats(req.getFlightId(), req.getNumberOfSeats());
 
 		String pnr = UUID.randomUUID().toString().substring(0, 8);
 
-		Ticket ticket = Ticket.builder().pnr(pnr).seatNo(req.getSeatNo()).passengerId(req.getPassengerId())
-				.flightId(req.getFlightId()).booked(true).build();
+		Ticket ticket = Ticket.builder().pnr(pnr).passengerId(req.getPassengerId()).flightId(req.getFlightId())
+				.numberOfSeats(req.getNumberOfSeats()).booked(true).build();
 
 		ticketRepository.save(ticket);
 
-		String event = "Ticket booked for passengerId=" + req.getPassengerId() + ", flightId=" + req.getFlightId()
-				+ ", pnr=" + pnr;
+		// 2. Kafka (best-effort)
+		String event = "Ticket booked: passengerId=" + req.getPassengerId() + ", flightId=" + req.getFlightId()
+				+ ", seats=" + req.getNumberOfSeats() + ", pnr=" + pnr;
 
-		// --- HANDLE KAFKA FAILURE
 		try {
-			kafkaTemplate.send("ticket-confirmation", event).exceptionally(ex -> {
-				logger.error("Failed to send Kafka message for PNR {}: {}", pnr, ex.getMessage());
-				return null;
-			});
+			kafkaTemplate.send("ticket-confirmation", event);
 		} catch (Exception ex) {
-			logger.error("Kafka send crashed for PNR {}: {}", pnr, ex.getMessage());
+			logger.error("Kafka failed for PNR {}: {}", pnr, ex.getMessage());
 		}
 
 		return ResponseEntity.ok(pnr);
@@ -95,7 +115,8 @@ public class TicketService {
 
 		TicketResponse res = TicketResponse.builder().name(passenger.getName()).email(passenger.getEmail())
 				.origin(flight.getOrigin()).destination(flight.getDestination()).pnr(ticket.getPnr())
-				.arrivalTime(flight.getArrivalTime()).departureTime(flight.getDepartureTime()).build();
+				.arrivalTime(flight.getArrivalTime()).departureTime(flight.getDepartureTime())
+				.numberOfSeats(ticket.getNumberOfSeats()).build();
 
 		return ResponseEntity.ok(res);
 	}
@@ -134,7 +155,8 @@ public class TicketService {
 
 			return TicketResponse.builder().name(passenger.getName()).email(passenger.getEmail())
 					.origin(flight.getOrigin()).destination(flight.getDestination()).pnr(ticket.getPnr())
-					.arrivalTime(flight.getArrivalTime()).departureTime(flight.getDepartureTime()).build();
+					.arrivalTime(flight.getArrivalTime()).departureTime(flight.getDepartureTime())
+					.numberOfSeats(ticket.getNumberOfSeats()).build();
 
 		}).toList();
 

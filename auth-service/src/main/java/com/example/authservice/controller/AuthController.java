@@ -7,9 +7,11 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -47,12 +49,17 @@ public class AuthController {
 	@Autowired
 	RoleRepository roleRepository;
 
-	@Autowired
+	@Autowired // bcrypt password encoder
 	PasswordEncoder encoder;
+	// bcrypt encodes by default and decodes by matching hashes
 
 	@Autowired
 	JwtUtils jwtUtils;
 
+	// @AuthenticationPrincipal UserDetailsImpl userDetails
+	// is NOT coming from the request body / query / headers.
+	// It is injected by Spring Security, after authentication succeeds.
+	// @AuthenticationPrincipal resolves from SecurityContext
 	@GetMapping("/me")
 	public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
@@ -69,21 +76,23 @@ public class AuthController {
 
 	@PostMapping("/signin")
 	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+		try {
+			Authentication authentication = authenticationManager.authenticate(
+					new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
-		Authentication authentication = authenticationManager.authenticate(
-				new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
+			UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-		UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+			ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
 
-		// create cookie and token
-		ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
-		String token = jwtUtils.generateTokenFromUsername(userDetails.getUsername());
+			List<String> roles = userDetails.getAuthorities().stream().map(a -> a.getAuthority())
+					.collect(Collectors.toList());
 
-		List<String> roles = userDetails.getAuthorities().stream().map(a -> a.getAuthority())
-				.collect(Collectors.toList());
+			return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString()).body(new UserInfoResponse(
+					userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), roles));
 
-		return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString()).body(
-				new UserInfoResponse(userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), roles));
+		} catch (BadCredentialsException e) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
+		}
 	}
 
 	@PostMapping("/signup")

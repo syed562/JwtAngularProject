@@ -1,5 +1,7 @@
 package com.example.request;
 
+import java.time.LocalDateTime;
+
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,4 +17,8 @@ public class SearchRequest {
 	private String origin;
 	@NotNull
 	private String destination;
+
+	@NotNull
+	private LocalDateTime departureDateTime;
+
 }
