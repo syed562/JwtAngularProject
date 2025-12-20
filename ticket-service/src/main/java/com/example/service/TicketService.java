@@ -53,12 +53,12 @@ public class TicketService {
 			return ResponseEntity.ok("Ticket already cancelled");
 		}
 
-		// 1. Increase seats in Flight Service
 		flightInterface.releaseSeats(ticket.getFlightId(), ticket.getNumberOfSeats());
 
-		// 2. Mark ticket cancelled (OR delete – your choice)
 		ticket.setBooked(false);
 		ticketRepository.save(ticket);
+//		ticketRepository.delete(ticket);
+
 
 		return ResponseEntity.ok("Ticket cancelled successfully");
 	}
@@ -116,7 +116,7 @@ public class TicketService {
 		TicketResponse res = TicketResponse.builder().name(passenger.getName()).email(passenger.getEmail())
 				.origin(flight.getOrigin()).destination(flight.getDestination()).pnr(ticket.getPnr())
 				.arrivalTime(flight.getArrivalTime()).departureTime(flight.getDepartureTime())
-				.numberOfSeats(ticket.getNumberOfSeats()).build();
+				.numberOfSeats(ticket.getNumberOfSeats()).id(ticket.getTicketId()).booked(ticket.isBooked()).build();
 
 		return ResponseEntity.ok(res);
 	}
@@ -156,7 +156,7 @@ public class TicketService {
 			return TicketResponse.builder().name(passenger.getName()).email(passenger.getEmail())
 					.origin(flight.getOrigin()).destination(flight.getDestination()).pnr(ticket.getPnr())
 					.arrivalTime(flight.getArrivalTime()).departureTime(flight.getDepartureTime())
-					.numberOfSeats(ticket.getNumberOfSeats()).build();
+					.numberOfSeats(ticket.getNumberOfSeats()).id(ticket.getTicketId()).booked(ticket.isBooked()).build();
 
 		}).toList();
 
