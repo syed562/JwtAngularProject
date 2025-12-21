@@ -30,10 +30,10 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
 		}
 
 		Claims claims = jwtUtil.extractAllClaims(token);
-		String username = claims.getSubject();
+	String username = claims.getSubject();
 
 		Object rolesObj = claims.get("roles");
-		List<String> rolesList;
+	List<String> rolesList;
 		if (rolesObj == null) {
 			rolesList = List.of();
 		} else {
@@ -41,10 +41,10 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
 			rolesList = Arrays.stream(s.split(",")).filter(r -> !r.isEmpty()).collect(Collectors.toList());
 		}
 
-		var authorities = rolesList.stream().map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
+	var authorities = rolesList.stream().map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
 				.map(SimpleGrantedAuthority::new).collect(Collectors.toList());
 
-		var auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
+	var auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
 		return Mono.just(auth);
 	}
 }

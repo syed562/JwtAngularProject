@@ -31,7 +31,7 @@ public class GatewaySecurityConfig {
 
 	            .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-	            // AUTH
+	           
 	            .pathMatchers(
 	                "/auth-service/api/auth/signup",
 	                "/auth-service/api/auth/signin",
@@ -39,7 +39,7 @@ public class GatewaySecurityConfig {
 	                "/auth-service/api/auth/me"
 	            ).permitAll()
 
-	            // FLIGHT SERVICE
+	           
 	            .pathMatchers("/flight-service/flight/register").hasRole("ADMIN")
 	            .pathMatchers("/flight-service/flight/delete/**").hasRole("ADMIN")
 	            .pathMatchers("/flight-service/flight/getAllFlights")
@@ -49,12 +49,12 @@ public class GatewaySecurityConfig {
 	            .pathMatchers("/flight-service/flight/getByOriginDestinationDateTime")
 	                .hasAnyRole("ADMIN", "USER")
 
-	            // SEAT MANAGEMENT (internal but same roles)
+	           
                     .pathMatchers("/flight-service/flight/flights/*/reserve")
                     .hasAnyRole("ADMIN", "USER")
                     .pathMatchers("/flight-service/flight/flights/*/release")
                     .hasAnyRole("ADMIN", "USER")
-	            // PASSENGER SERVICE
+	         
 	            .pathMatchers("/passenger-service/passenger/register")
 	                .hasAnyRole("ADMIN", "USER")
 	            .pathMatchers("/passenger-service/passenger/getByPassengerId/**")
@@ -64,7 +64,6 @@ public class GatewaySecurityConfig {
 	            .pathMatchers("/passenger-service/passenger/delete/**")
 	                .hasAnyRole("ADMIN", "USER")
 
-	            // TICKET SERVICE
 	            .pathMatchers("/ticket-service/ticket/book")
 	                .hasAnyRole("ADMIN", "USER")
 	            .pathMatchers("/ticket-service/ticket/getByPnr/**")

@@ -36,18 +36,18 @@ public class JwtAuthFilter implements WebFilter {
 		if (authHeader != null && authHeader.startsWith("Bearer "))
 			token = authHeader.substring(7);
 
-		if (token == null && exchange.getRequest().getCookies().getFirst("asrithaCookie") != null)
-			token = exchange.getRequest().getCookies().getFirst("asrithaCookie").getValue();
+		if (token == null && exchange.getRequest().getCookies().getFirst("sabiCookie") != null)
+			token = exchange.getRequest().getCookies().getFirst("sabiCookie").getValue();
 
 		if (token != null && jwtUtil.validate(token)) {
 
 			String username = jwtUtil.extractUsername(token);
 			List<String> roles = jwtUtil.extractRoles(token);
 
-			var authorities = roles.stream().map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
+		var authorities = roles.stream().map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
 					.map(SimpleGrantedAuthority::new).collect(Collectors.toList());
 
-			Authentication auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
+		Authentication auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
 
 			return chain.filter(exchange).contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
 		}

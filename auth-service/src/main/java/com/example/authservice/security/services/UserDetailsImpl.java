@@ -24,11 +24,7 @@ public class UserDetailsImpl implements UserDetails {
 
 	private Collection<? extends GrantedAuthority> authorities;
 
-	// we need constructor because we are not using lombok here
-	// @AllArgsConstructor
-	// authorities is a normal collection but we are using Collection<? extends
-	// GrantedAuthority>
-	// because it is more flexible and can accept any type of GrantedAuthority
+	
 	public UserDetailsImpl(Long id, String username, String email, String password,
 			Collection<? extends GrantedAuthority> authorities) {
 		this.id = id;

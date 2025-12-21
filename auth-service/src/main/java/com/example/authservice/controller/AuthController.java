@@ -49,17 +49,14 @@ public class AuthController {
 	@Autowired
 	RoleRepository roleRepository;
 
-	@Autowired // bcrypt password encoder
+	@Autowired 
 	PasswordEncoder encoder;
-	// bcrypt encodes by default and decodes by matching hashes
+	
 
 	@Autowired
 	JwtUtils jwtUtils;
 
-	// @AuthenticationPrincipal UserDetailsImpl userDetails
-	// is NOT coming from the request body / query / headers.
-	// It is injected by Spring Security, after authentication succeeds.
-	// @AuthenticationPrincipal resolves from SecurityContext
+
 	@GetMapping("/me")
 	public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
@@ -114,7 +111,7 @@ public class AuthController {
 		Set<Role> roles = new HashSet<>();
 
 		if (strRoles == null || strRoles.isEmpty()) {
-			// default -> USER
+		
 			Role userRole = roleRepository.findByName(ERole.ROLE_USER)
 					.orElseThrow(() -> new RuntimeException("Error: Role USER not found"));
 			roles.add(userRole);

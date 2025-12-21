@@ -24,14 +24,12 @@ public class WebSecurityConfig {
 		this.authJwtFilter = authJwtFilter;
 	}
 
-	// provides encode method for hashing passwords
+
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
 
-	// provides authentication manager bean used to pass unauthenticated token to
-	// authenticate
 	@Bean
 	public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
 		return authConfig.getAuthenticationManager();
