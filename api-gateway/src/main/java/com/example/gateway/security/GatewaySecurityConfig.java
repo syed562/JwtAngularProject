@@ -50,11 +50,10 @@ public class GatewaySecurityConfig {
 	                .hasAnyRole("ADMIN", "USER")
 
 	            // SEAT MANAGEMENT (internal but same roles)
-	            .pathMatchers("/flight-service/flight/flights/**/reserve")
-	                .hasAnyRole("ADMIN", "USER")
-	            .pathMatchers("/flight-service/flight/flights/**/release")
-	                .hasAnyRole("ADMIN", "USER")
-
+                    .pathMatchers("/flight-service/flight/flights/*/reserve")
+                    .hasAnyRole("ADMIN", "USER")
+                    .pathMatchers("/flight-service/flight/flights/*/release")
+                    .hasAnyRole("ADMIN", "USER")
 	            // PASSENGER SERVICE
 	            .pathMatchers("/passenger-service/passenger/register")
 	                .hasAnyRole("ADMIN", "USER")

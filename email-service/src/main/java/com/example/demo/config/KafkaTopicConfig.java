@@ -9,11 +9,15 @@ import org.springframework.kafka.config.TopicBuilder;
 @Configuration
 public class KafkaTopicConfig {
 
-	@Value("${kafka.topic.ticket-booked}")
-	private String ticketBookedTopic;
+    @Value("${kafka.topic.ticket-booked}")
+    private String ticketBookedTopic;
 
-	@Bean
-	public NewTopic createTicketBookedTopic() {
-		return TopicBuilder.name(ticketBookedTopic).partitions(1).replicas(1).build();
-	}
+    @Bean
+    public NewTopic createTicketBookedTopic() {
+        return TopicBuilder
+                .name(ticketBookedTopic)
+                .partitions(1)
+                .replicas(1)
+                .build();
+    }
 }

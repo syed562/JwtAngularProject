@@ -1,5 +1,6 @@
 package com.example.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,6 +13,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.event.TicketBookedEvent;
 import com.example.exception.ResourceNotFoundException;
 import com.example.feign.FlightInterface;
 import com.example.feign.PassengerInterface;
@@ -31,37 +33,61 @@ public class TicketService {
 
 	private PassengerInterface passengerInterface;
 	private FlightInterface flightInterface;
-	private KafkaTemplate<String, String> kafkaTemplate;
-
-	public TicketService(@Autowired TicketRepository ticketRepository, @Autowired PassengerInterface passengerInterface,
-			@Autowired FlightInterface flightInterface, @Autowired KafkaTemplate<String, String> kafkaTemplate) {
-		this.ticketRepository = ticketRepository;
-		this.passengerInterface = passengerInterface;
-		this.flightInterface = flightInterface;
-		this.kafkaTemplate = kafkaTemplate;
-	}
+	private KafkaTemplate<String, TicketBookedEvent> kafkaTemplate;
+	public TicketService(@Autowired TicketRepository ticketRepository,
+            @Autowired PassengerInterface passengerInterface,
+            @Autowired FlightInterface flightInterface,
+            @Autowired KafkaTemplate<String, TicketBookedEvent> kafkaTemplate) {
+this.ticketRepository = ticketRepository;
+this.passengerInterface = passengerInterface;
+this.flightInterface = flightInterface;
+this.kafkaTemplate = kafkaTemplate;
+}
 
 	private static final Logger logger = LoggerFactory.getLogger(TicketService.class);
 
 	@Transactional
 	public ResponseEntity<String> deleteTicketById(int ticketId) {
 
-		Ticket ticket = ticketRepository.findById(ticketId)
-				.orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+	    Ticket ticket = ticketRepository.findById(ticketId)
+	            .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
 
-		if (!ticket.isBooked()) {
-			return ResponseEntity.ok("Ticket already cancelled");
-		}
+	    if (!ticket.isBooked()) {
+	        return ResponseEntity.ok("Ticket already cancelled");
+	    }
 
-		flightInterface.releaseSeats(ticket.getFlightId(), ticket.getNumberOfSeats());
+	    ResponseEntity<FlightResponse> response =
+	            flightInterface.getByID(ticket.getFlightId());
 
-		ticket.setBooked(false);
-		ticketRepository.save(ticket);
-//		ticketRepository.delete(ticket);
+	    FlightResponse flight = response.getBody();
 
+	    if (flight == null || flight.getDepartureTime() == null) {
+	        return ResponseEntity
+	                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("Unable to fetch flight details");
+	    }
 
-		return ResponseEntity.ok("Ticket cancelled successfully");
+	    LocalDateTime departureTime = flight.getDepartureTime();
+	    LocalDateTime now = LocalDateTime.now();
+
+	    if (now.plusHours(24).isAfter(departureTime)) {
+	        return ResponseEntity
+	                .status(HttpStatus.BAD_REQUEST)
+	                .body("Ticket cannot be cancelled within 24 hours of departure");
+	    }
+
+	    flightInterface.releaseSeats(
+	            ticket.getFlightId(),
+	            ticket.getNumberOfSeats()
+	    );
+
+	    ticket.setBooked(false);
+	    ticketRepository.save(ticket);
+
+	    return ResponseEntity.ok("Ticket cancelled successfully");
 	}
+
+
 
 	@Transactional
 	public ResponseEntity<String> bookTicketService(BookTicketRequest req) {
@@ -80,16 +106,21 @@ public class TicketService {
 
 		ticketRepository.save(ticket);
 
-		// 2. Kafka (best-effort)
-		String event = "Ticket booked: passengerId=" + req.getPassengerId() + ", flightId=" + req.getFlightId()
-				+ ", seats=" + req.getNumberOfSeats() + ", pnr=" + pnr;
+		PassengerDetailsResponse passenger =
+		        passengerInterface.getPassengerDetails(req.getPassengerId()).getBody();
+
+		TicketBookedEvent event = new TicketBookedEvent(
+		        passenger.getEmail(),
+		        pnr,
+		        req.getFlightId(),
+		        req.getNumberOfSeats()
+		);
 
 		try {
-			kafkaTemplate.send("ticket-confirmation", event);
+		    kafkaTemplate.send("ticket-confirmation", event);
 		} catch (Exception ex) {
-			logger.error("Kafka failed for PNR {}: {}", pnr, ex.getMessage());
+		    logger.error("Kafka failed for PNR {}: {}", pnr, ex.getMessage());
 		}
-
 		return ResponseEntity.ok(pnr);
 	}
 
