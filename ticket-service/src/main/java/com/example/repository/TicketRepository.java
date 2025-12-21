@@ -14,7 +14,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Integer> {
 
 	List<Ticket> findAllByPassengerId(int passengerId);
 
-//	boolean existsByFlightIdAndSeatNo(Integer flightId, String seatNo);
 
 	boolean existsByFlightIdAndPassengerId(Integer flightId, Integer passengerId);
 }
