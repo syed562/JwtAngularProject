@@ -36,7 +36,7 @@ public class JwtUtils {
 			byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
 			return Keys.hmacShaKeyFor(keyBytes);
 		} catch (IllegalArgumentException ex) {
-			// fallback to plain bytes if not base64
+			
 			return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
 		}
 	}
@@ -62,7 +62,6 @@ public class JwtUtils {
 		return ResponseCookie.from(jwtCookieName, "").path("/").maxAge(0).httpOnly(true).build();
 	}
 
-	// if token is in cookie, return it, else check header
 	public String getJwtFromCookies(HttpServletRequest request) {
 		Cookie cookie = WebUtils.getCookie(request, jwtCookieName);
 		if (cookie != null)

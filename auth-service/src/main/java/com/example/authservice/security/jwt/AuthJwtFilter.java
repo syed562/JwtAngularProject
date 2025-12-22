@@ -24,15 +24,13 @@ public class AuthJwtFilter extends OncePerRequestFilter {
 	@Autowired
 	private UserDetailsService userDetailsService;
 
-//	Does doFilterInternal() auto-run?
-//			YES — for EVERY HTTP request
+
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException, java.io.IOException {
         System.out.println("AuthJwtFilter HIT for path: " + request.getRequestURI());
 		String path = request.getRequestURI();
 
-		// Allow auth endpoints without JWT
         if (path.equals("/api/auth/signin")
                 || path.equals("/api/auth/signup")
                 || path.equals("/api/auth/signout")) {
@@ -48,14 +46,11 @@ public class AuthJwtFilter extends OncePerRequestFilter {
             System.out.println("Auth Header: " + request.getHeader("Authorization"));
             System.out.println("Cookie token: " + request.getCookies());
 			UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-			// create auth token which is authenticated by passing userDetails
+			
 			UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails,
 					null, userDetails.getAuthorities());
-			// set details from request
-			// the details are additional information about the authentication request, such
-			// as the remote address and session ID.
-			authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-			// set authentication in security context
+		
+		
 			SecurityContextHolder.getContext().setAuthentication(authentication);
             System.out.println("Authentication set: " + authentication.getName());
 		}
