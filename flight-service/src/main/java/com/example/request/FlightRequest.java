@@ -35,8 +35,5 @@ public class FlightRequest {
 	@NotNull
 	@Positive
 	private int totalSeats;
-//	@NotNull
-//	@Positive
-//	private int availableSeats;
 
 }
