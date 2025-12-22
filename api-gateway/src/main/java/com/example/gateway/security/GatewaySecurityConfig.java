@@ -11,6 +11,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsWebFilter;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
+
 @Configuration
 public class GatewaySecurityConfig {
 
@@ -21,54 +22,77 @@ public class GatewaySecurityConfig {
     }
 
 
-    @Bean
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+    // @Bean
+    // public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
 
-        return http
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .authorizeExchange(ex -> ex
+    //     return http
+    //             .csrf(ServerHttpSecurity.CsrfSpec::disable)
+    //             .authorizeExchange(ex -> ex
 
-                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+    //                     .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
   
-                                .pathMatchers("/auth-service/api/auth/**").permitAll()
+    //                             .pathMatchers("/auth-service/api/auth/**").permitAll()
                      
-                        .pathMatchers("/flight-service/flight/register").hasRole("ADMIN")
-                        .pathMatchers("/flight-service/flight/delete/**").hasRole("ADMIN")
-                        .pathMatchers("/flight-service/flight/getAllFlights")
-                        .hasAnyRole("ADMIN", "USER")
-                        .pathMatchers("/flight-service/flight/getFlightById/**")
-                        .hasAnyRole("ADMIN", "USER")
-                        .pathMatchers("/flight-service/flight/getByOriginDestinationDateTime")
-                        .hasAnyRole("ADMIN", "USER")
+    //                     .pathMatchers("/flight-service/flight/register").hasRole("ADMIN")
+    //                     .pathMatchers("/flight-service/flight/delete/**").hasRole("ADMIN")
+    //                     .pathMatchers("/flight-service/flight/getAllFlights")
+    //                     .hasAnyRole("ADMIN", "USER")
+    //                     .pathMatchers("/flight-service/flight/getFlightById/**")
+    //                     .hasAnyRole("ADMIN", "USER")
+    //                     .pathMatchers("/flight-service/flight/getByOriginDestinationDateTime")
+    //                     .hasAnyRole("ADMIN", "USER")
 
-                       .pathMatchers("/passenger-service/passenger/register")
-                        .hasAnyRole("ADMIN", "USER")
-                        .pathMatchers("/passenger-service/passenger/getByPassengerId/**")
-                        .hasAnyRole("ADMIN", "USER")
-                        .pathMatchers("/passenger-service/passenger/getPassengerIdByEmail/**")
-                        .hasAnyRole("ADMIN", "USER")
-                        .pathMatchers("/passenger-service/passenger/delete/**")
-                        .hasAnyRole("ADMIN", "USER")
+    //                    .pathMatchers("/passenger-service/passenger/register")
+    //                     .hasAnyRole("ADMIN", "USER")
+    //                     .pathMatchers("/passenger-service/passenger/getByPassengerId/**")
+    //                     .hasAnyRole("ADMIN", "USER")
+    //                     .pathMatchers("/passenger-service/passenger/getPassengerIdByEmail/**")
+    //                     .hasAnyRole("ADMIN", "USER")
+    //                     .pathMatchers("/passenger-service/passenger/delete/**")
+    //                     .hasAnyRole("ADMIN", "USER")
 
 
                         
-                        .pathMatchers("/flight-service/flight/flights/*/reserve")
-                        .hasAnyRole("ADMIN", "USER")
-                        .pathMatchers("/flight-service/flight/flights/*/release")
-                        .hasAnyRole("ADMIN", "USER")
+    //                     .pathMatchers("/flight-service/flight/flights/*/reserve")
+    //                     .hasAnyRole("ADMIN", "USER")
+    //                     .pathMatchers("/flight-service/flight/flights/*/release")
+    //                     .hasAnyRole("ADMIN", "USER")
                         
                      
                         
 
                       
-                        .anyExchange().authenticated()
-                )
-                .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)
-                .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
-                .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
-                .build();
-    }
+    //                     .anyExchange().authenticated()
+    //             )
+    //             .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+    //             .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
+    //             .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
+    //             .build();
+    // }
+@Bean
+public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+    return http
+        .csrf(ServerHttpSecurity.CsrfSpec::disable)
+        .authorizeExchange(ex -> ex
+
+           
+            .pathMatchers(
+                "/auth-service/api/auth/**",
+                "/flight-service/flight/search/**"
+            ).permitAll()
+
+            
+            .pathMatchers("/flight/register").hasRole("ADMIN")
+
+            
+            .pathMatchers("/ticket-service/**").hasRole("USER")
+
+            .anyExchange().authenticated()
+        )
+        .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+        .build();
+}
 
     @Bean
     public CorsWebFilter corsWebFilter() {

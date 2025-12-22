@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Entity
 public class Flight {
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int flightId;
 	private Airline airline;
 	private String origin;
