@@ -1,27 +1,19 @@
 package com.example.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.kafka.core.KafkaTemplate;
-
+import com.example.event.TicketBookedEvent;
 import com.example.feign.FlightInterface;
 import com.example.feign.PassengerInterface;
 import com.example.model.Ticket;
@@ -31,143 +23,156 @@ import com.example.response.FlightResponse;
 import com.example.response.PassengerDetailsResponse;
 import com.example.response.TicketResponse;
 
-class TicketServiceTest {
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 
-	@InjectMocks
-	private TicketService ticketService;
+@ExtendWith(MockitoExtension.class)
+public class TicketServiceTest {
 
-	@Mock
-	private TicketRepository ticketRepository;
+    @Mock
+    private TicketRepository ticketRepository;
 
-	@Mock
-	private PassengerInterface passengerInterface;
+    @Mock
+    private PassengerInterface passengerInterface;
 
-	@Mock
-	private FlightInterface flightInterface;
-	@Mock
-	private KafkaTemplate<String, Object> kafkaTemplate;
+    @Mock
+    private FlightInterface flightInterface;
 
-	@BeforeEach
-	void init() {
-		MockitoAnnotations.openMocks(this);
-	}
+    @Mock
+    private KafkaTemplate<String, TicketBookedEvent> kafkaTemplate;
 
-	@Test
-	void testBookTicketService() {
-		BookTicketRequest req = new BookTicketRequest();
-		req.setFlightId(1);
-		req.setPassengerId(10);
-		req.setSeatNo("A1");
+    @InjectMocks
+    private TicketService ticketService;
 
-		when(ticketRepository.save(any(Ticket.class))).thenAnswer(i -> i.getArguments()[0]);
+    @Captor
+    private ArgumentCaptor<Ticket> ticketCaptor;
 
-		ResponseEntity<String> response = ticketService.bookTicketService(req);
+    private PassengerDetailsResponse passenger;
+    private FlightResponse flight;
 
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertNotNull(response.getBody());
-		assertEquals(8, response.getBody().length()); // PNR is 8 chars
-	}
+    @BeforeEach
+    public void setUp() {
+        passenger = PassengerDetailsResponse.builder().name("John Doe").email("john@example.com").phoneNum("12345").build();
+        flight = FlightResponse.builder()
+                .origin("A")
+                .destination("B")
+                .arrivalTime(LocalDateTime.now().plusDays(2))
+                .departureTime(LocalDateTime.now().plusDays(2).minusHours(2))
+                .build();
+    }
 
-	@Test
-	void testBookTicketServicee() {
-		BookTicketRequest req = new BookTicketRequest();
-		req.setFlightId(1);
-		req.setPassengerId(10);
-		req.setSeatNo("A1");
+    @Test
+    public void testBookTicketService_success() {
+        BookTicketRequest req = new BookTicketRequest();
+        req.setFlightId(1);
+        req.setPassengerId(2);
+        req.setNumberOfSeats(2);
 
-		when(ticketRepository.save(any(Ticket.class))).thenAnswer(i -> i.getArguments()[0]);
+        // flightInterface.reserveSeats is void
+        doNothing().when(flightInterface).reserveSeats(1, 2);
 
-		when(kafkaTemplate.send(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        // repository save returns the ticket (we'll capture it)
+        when(ticketRepository.save(any(Ticket.class))).thenAnswer(inv -> inv.getArgument(0));
 
-		ResponseEntity<String> response = ticketService.bookTicketService(req);
+        when(passengerInterface.getPassengerDetails(2)).thenReturn(ResponseEntity.ok(passenger));
 
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertNotNull(response.getBody());
-		assertEquals(8, response.getBody().length()); // PNR is 8 chars
-	}
+        // kafka send - do nothing (we don't assert it here)
+        when(kafkaTemplate.send(any(), any())).thenReturn(null);
 
-	@Test
-	void testGetByPnrServiceSuccess() {
+        ResponseEntity<String> resp = ticketService.bookTicketService(req);
+        assertEquals(200, resp.getStatusCodeValue());
+        assertThat(resp.getBody()).isNotNull();
+        assertThat(resp.getBody().length()).isEqualTo(8);
 
-		Ticket ticket = Ticket.builder().pnr("ABC12345").seatNo("A1").flightId(1).passengerId(10).booked(true).build();
+        verify(flightInterface, times(1)).reserveSeats(1, 2);
+        verify(ticketRepository, times(1)).save(any(Ticket.class));
+        verify(passengerInterface, times(1)).getPassengerDetails(2);
+    }
 
-		when(ticketRepository.findByPnr("ABC12345")).thenReturn(Optional.of(ticket));
+    @Test
+    public void testDeleteTicketById_success() {
+        Ticket t = Ticket.builder().ticketId(10).pnr("PNR12345").flightId(100).passengerId(5).numberOfSeats(1).booked(true).build();
+        when(ticketRepository.findById(10)).thenReturn(Optional.of(t));
 
-		PassengerDetailsResponse passenger = new PassengerDetailsResponse();
-		passenger.setName("John");
-		passenger.setEmail("john@gmail.com");
+        FlightResponse flightResp = FlightResponse.builder()
+                .departureTime(LocalDateTime.now().plusDays(2))
+                .build();
+        when(flightInterface.getByID(100)).thenReturn(ResponseEntity.ok(flightResp));
 
-		when(passengerInterface.getPassengerDetails(10)).thenReturn(ResponseEntity.ok(passenger));
+        ResponseEntity<String> resp = ticketService.deleteTicketById(10);
+        assertEquals(200, resp.getStatusCodeValue());
+        assertEquals("Ticket cancelled successfully", resp.getBody());
 
-		FlightResponse flight = new FlightResponse();
-		flight.setOrigin("HYD");
-		flight.setDestination("DEL");
-		flight.setDepartureTime(LocalDateTime.now());
-		flight.setArrivalTime(LocalDateTime.now().plusHours(2));
+        verify(flightInterface, times(1)).releaseSeats(100, 1);
+        verify(ticketRepository, times(1)).save(any(Ticket.class));
+    }
 
-		when(flightInterface.getByID(1)).thenReturn(ResponseEntity.ok(flight));
+    @Test
+    public void testDeleteTicketById_within24Hours_shouldReturnBadRequest() {
+        Ticket t = Ticket.builder().ticketId(11).pnr("PNR67890").flightId(200).passengerId(6).numberOfSeats(1).booked(true).build();
+        when(ticketRepository.findById(11)).thenReturn(Optional.of(t));
 
-		ResponseEntity<TicketResponse> response = ticketService.getByPnrService("ABC12345");
+        FlightResponse flightResp = FlightResponse.builder()
+                .departureTime(LocalDateTime.now().plusHours(12))
+                .build();
+        when(flightInterface.getByID(200)).thenReturn(ResponseEntity.ok(flightResp));
 
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertEquals("John", response.getBody().getName());
-		assertEquals("HYD", response.getBody().getOrigin());
-	}
+        ResponseEntity<String> resp = ticketService.deleteTicketById(11);
+        assertEquals(400, resp.getStatusCodeValue());
+        assertThat(resp.getBody()).contains("cannot be cancelled");
 
-	@Test
-	void testGetTicketsByEmailServiceSuccess() {
+        // no release/seve save
+    }
 
-		when(passengerInterface.getIdByEmail("abc@gmail.com")).thenReturn(ResponseEntity.ok(10));
+    @Test
+    public void testGetByPnrService_success() {
+        Ticket t = Ticket.builder().ticketId(20).pnr("PNR00001").flightId(300).passengerId(7).numberOfSeats(1).booked(true).build();
+        when(ticketRepository.findByPnr("PNR00001")).thenReturn(Optional.of(t));
 
-		PassengerDetailsResponse passenger = new PassengerDetailsResponse();
-		passenger.setName("John");
-		passenger.setEmail("abc@gmail.com");
-		when(passengerInterface.getPassengerDetails(10)).thenReturn(ResponseEntity.ok(passenger));
+        when(passengerInterface.getPassengerDetails(7)).thenReturn(ResponseEntity.ok(passenger));
+        when(flightInterface.getByID(300)).thenReturn(ResponseEntity.ok(flight));
 
-		Ticket t1 = Ticket.builder().pnr("PNR1").flightId(1).passengerId(10).build();
-		Ticket t2 = Ticket.builder().pnr("PNR2").flightId(2).passengerId(10).build();
+        ResponseEntity<TicketResponse> resp = ticketService.getByPnrService("PNR00001");
+        assertEquals(200, resp.getStatusCodeValue());
+        assertThat(resp.getBody()).isNotNull();
+        assertEquals("PNR00001", resp.getBody().getPnr());
+        assertEquals("John Doe", resp.getBody().getName());
+    }
 
-		when(ticketRepository.findAllByPassengerId(10)).thenReturn(Arrays.asList(t1, t2));
+    @Test
+    public void testGetTicketsByEmailService_success() {
+        String email = "john@example.com";
+        when(passengerInterface.getIdByEmail(email)).thenReturn(ResponseEntity.ok(7));
+        when(passengerInterface.getPassengerDetails(7)).thenReturn(ResponseEntity.ok(passenger));
 
-		FlightResponse fr1 = new FlightResponse();
-		fr1.setOrigin("HYD");
-		fr1.setDestination("DEL");
+        Ticket t1 = Ticket.builder().ticketId(31).pnr("P1").flightId(400).passengerId(7).numberOfSeats(1).booked(true).build();
+        Ticket t2 = Ticket.builder().ticketId(32).pnr("P2").flightId(400).passengerId(7).numberOfSeats(2).booked(true).build();
 
-		FlightResponse fr2 = new FlightResponse();
-		fr2.setOrigin("BLR");
-		fr2.setDestination("DEL");
+        when(ticketRepository.findAllByPassengerId(7)).thenReturn(List.of(t1, t2));
+        when(flightInterface.getByID(400)).thenReturn(ResponseEntity.ok(flight));
 
-		when(flightInterface.getByID(1)).thenReturn(ResponseEntity.ok(fr1));
-		when(flightInterface.getByID(2)).thenReturn(ResponseEntity.ok(fr2));
+        ResponseEntity<List<TicketResponse>> resp = ticketService.getTicketsByEmailService(email);
+        assertEquals(200, resp.getStatusCodeValue());
+        assertThat(resp.getBody()).hasSize(2);
+        assertThat(resp.getBody().get(0).getEmail()).isEqualTo("john@example.com");
+    }
 
-		ResponseEntity<List<TicketResponse>> response = ticketService.getTicketsByEmailService("abc@gmail.com");
+    @Test
+    public void testBookTicketService_invalidSeats_throws() {
+        BookTicketRequest req = new BookTicketRequest();
+        req.setFlightId(1);
+        req.setPassengerId(2);
+        req.setNumberOfSeats(0);
 
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertEquals(2, response.getBody().size());
-	}
-
-	@Test
-	void testGetByPnrServiceFallback() {
-
-		Throwable t = new RuntimeException("DOWN");
-
-		ResponseEntity<TicketResponse> response = ticketService.getByPnrFallback("ABC12345", t);
-
-		assertEquals(503, response.getStatusCode().value());
-		assertNull(response.getBody());
-	}
-
-	@Test
-	void testGetTicketsByEmailFallback() {
-
-		Throwable ex = new RuntimeException("DOWN");
-
-		ResponseEntity<List<TicketResponse>> response = ticketService.getTicketsByEmailFallback("abc@gmail.com", ex);
-
-		assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
-
-		assertNotNull(response.getBody());
-		assertTrue(response.getBody().isEmpty());
-	}
-
+        assertThrows(IllegalArgumentException.class, () -> ticketService.bookTicketService(req));
+    }
 }
+

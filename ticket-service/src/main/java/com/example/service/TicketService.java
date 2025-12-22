@@ -92,7 +92,7 @@ this.kafkaTemplate = kafkaTemplate;
 	@Transactional
 	public ResponseEntity<String> bookTicketService(BookTicketRequest req) {
 
-		
+		// 1. Reduce seats in Flight Service FIRST
 		if (req.getNumberOfSeats() <= 0) {
 		    throw new IllegalArgumentException("Number of seats must be positive");
 		}
@@ -130,7 +130,7 @@ this.kafkaTemplate = kafkaTemplate;
 		Ticket ticket = ticketRepository.findByPnr(pnr)
 				.orElseThrow(() -> new ResourceNotFoundException("No ticket with this PNR"));
 
-	
+		// avoid NPE from Feign response
 		ResponseEntity<PassengerDetailsResponse> passengerResp = passengerInterface
 				.getPassengerDetails(ticket.getPassengerId());
 		if (passengerResp == null || passengerResp.getBody() == null) {
@@ -166,7 +166,7 @@ this.kafkaTemplate = kafkaTemplate;
 		if (passengerId == null)
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(List.of());
 
-	
+		// safety check
 		ResponseEntity<PassengerDetailsResponse> passengerResp = passengerInterface.getPassengerDetails(passengerId);
 		if (passengerResp == null || passengerResp.getBody() == null) {
 			throw new ResourceNotFoundException("Passenger details unavailable");

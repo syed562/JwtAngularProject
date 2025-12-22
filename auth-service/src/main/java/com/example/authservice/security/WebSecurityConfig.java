@@ -24,12 +24,14 @@ public class WebSecurityConfig {
 		this.authJwtFilter = authJwtFilter;
 	}
 
-
+	// provides encode method for hashing passwords
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
 
+	// provides authentication manager bean used to pass unauthenticated token to
+	// authenticate
 	@Bean
 	public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
 		return authConfig.getAuthenticationManager();
@@ -41,7 +43,7 @@ public class WebSecurityConfig {
 				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/api/auth/signin", "/api/auth/signup", "/api/auth/signout").permitAll()
-						.requestMatchers("/api/auth/me").authenticated().anyRequest().authenticated())
+						.requestMatchers("/api/auth/me","/api/auth/change-password").authenticated().anyRequest().authenticated())
 				.addFilterBefore(authJwtFilter, UsernamePasswordAuthenticationFilter.class)
 				.httpBasic(AbstractHttpConfigurer::disable);
 

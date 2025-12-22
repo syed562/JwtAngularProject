@@ -1,0 +1,12 @@
+@echo off
+echo Stopping all Java services that are listening on ports...
+
+for /f "tokens=5" %%p in ('netstat -ano ^| findstr LISTENING') do (
+    for /f "tokens=2" %%j in ('tasklist /FI "PID eq %%p" ^| findstr java.exe') do (
+        echo Killing PID %%p
+        taskkill /PID %%p /F
+    )
+)
+
+echo Done. All running Spring Boot services stopped.
+pause

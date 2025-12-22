@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -14,44 +14,65 @@ import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 
 import reactor.core.publisher.Mono;
-
 @Component
 public class JwtAuthFilter implements WebFilter {
 
-	private final JwtUtil jwtUtil;
+    private final JwtUtil jwtUtil;
 
-	public JwtAuthFilter(JwtUtil jwtUtil) {
-		this.jwtUtil = jwtUtil;
-	}
+    public JwtAuthFilter(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
 
-	@Override
-	public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-		String path = exchange.getRequest().getURI().getPath();
-		if (path.startsWith("/auth-service/api/auth/")) {
-			return chain.filter(exchange);
-		}
-		String token = null;
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
 
-		String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-		if (authHeader != null && authHeader.startsWith("Bearer "))
-			token = authHeader.substring(7);
+        String path = exchange.getRequest().getURI().getPath();
+        System.out.println("GATEWAY FILTER HIT: " + exchange.getRequest().getMethod() + " " + path);
 
-		if (token == null && exchange.getRequest().getCookies().getFirst("sabiCookie") != null)
-			token = exchange.getRequest().getCookies().getFirst("sabiCookie").getValue();
+        // public auth endpoints
+        if (path.equals("/auth-service/api/auth/signin")
+                || path.equals("/auth-service/api/auth/signup")
+                || path.equals("/auth-service/api/auth/signout")) {
+            return chain.filter(exchange);
+        }
 
-		if (token != null && jwtUtil.validate(token)) {
+        // cookie FIRST
+        String token = null;
+        if (exchange.getRequest().getCookies().getFirst("asrithaCookie") != null) {
+            token = exchange.getRequest().getCookies().getFirst("asrithaCookie").getValue();
+        }
 
-			String username = jwtUtil.extractUsername(token);
-			List<String> roles = jwtUtil.extractRoles(token);
+        // fallback header
+        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (token == null && authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        }
 
-		var authorities = roles.stream().map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
-					.map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+        boolean isAuthService = path.startsWith("/auth-service/api/auth/");
 
-		Authentication auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
+        // block only NON-auth services
+        if (!isAuthService && (token == null || !jwtUtil.validate(token))) {
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
 
-			return chain.filter(exchange).contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
-		}
+        // build authentication if token valid
+        if (token != null && jwtUtil.validate(token)) {
+            String username = jwtUtil.extractUsername(token);
+            List<String> roles = jwtUtil.extractRoles(token);
 
-		return chain.filter(exchange);
-	}
+            var authorities = roles.stream()
+                    .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(username, null, authorities);
+
+            return chain.filter(exchange)
+                    .contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication));
+        }
+
+        return chain.filter(exchange);
+    }
 }

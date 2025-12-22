@@ -34,7 +34,7 @@ public class TicketController {
 		return ticketService.deleteTicketById(ticketId);
 	}
 
-	
+	// we return pnr
 	@PostMapping("book")
 	public ResponseEntity<String> bookTicket(@Valid @RequestBody BookTicketRequest req) {
 		return ticketService.bookTicketService(req);

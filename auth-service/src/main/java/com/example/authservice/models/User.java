@@ -1,5 +1,6 @@
 package com.example.authservice.models;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -33,15 +34,36 @@ public class User {
 	@Size(max = 50)
 	@Email
 	private String email;
+    public boolean isPasswordExpired() {
+        return passwordLastChangedAt != null &&
+                passwordLastChangedAt.isBefore(LocalDateTime.now().minusMinutes(5));
+//        minusDays(90)
+    }
+    public LocalDateTime getPasswordLastChangedAt() {
+        return passwordLastChangedAt;
+    }
 
-	@NotBlank
+    public void setPasswordLastChangedAt(LocalDateTime passwordLastChangedAt) {
+        this.passwordLastChangedAt = passwordLastChangedAt;
+    }
+
+    public boolean isForcePasswordChange() {
+        return forcePasswordChange;
+    }
+
+    public void setForcePasswordChange(boolean forcePasswordChange) {
+        this.forcePasswordChange = forcePasswordChange;
+    }
+
+    @NotBlank
 	@Size(max = 120)
 	private String password;
 
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
 	private Set<Role> roles = new HashSet<>();
-
+    private LocalDateTime passwordLastChangedAt;
+    private boolean forcePasswordChange;
 	public User() {
 	}
 

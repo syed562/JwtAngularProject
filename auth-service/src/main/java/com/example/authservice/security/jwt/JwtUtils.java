@@ -28,7 +28,7 @@ public class JwtUtils {
 	@Value("${bezkoder.app.jwtExpirationMs}")
 	private int jwtExpirationMs;
 
-	@Value("${bezkoder.app.jwtCookieName:bezkoder}")
+	@Value("${bezkoder.app.jwtCookieName:asrithaCookie}")
 	private String jwtCookieName;
 
 	private Key key() {
@@ -36,6 +36,7 @@ public class JwtUtils {
 			byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
 			return Keys.hmacShaKeyFor(keyBytes);
 		} catch (IllegalArgumentException ex) {
+			// fallback to plain bytes if not base64
 			return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
 		}
 	}
@@ -45,14 +46,14 @@ public class JwtUtils {
 				.setExpiration(new Date((new Date()).getTime() + jwtExpirationMs)).signWith(key()).compact();
 	}
 
-	public String generateTokenWithRoles(String username, List<String> roles) {
-		return Jwts.builder().setSubject(username).claim("roles", roles).setIssuedAt(new Date())
+	public String generateTokenWithRoles(String username, List<String> roles,boolean forcePwdChange) {
+		return Jwts.builder().setSubject(username).claim("forcePwdChange", forcePwdChange).claim("roles", roles).setIssuedAt(new Date())
 				.setExpiration(new Date((new Date()).getTime() + jwtExpirationMs)).signWith(key()).compact();
 	}
 
-	public ResponseCookie generateJwtCookie(UserDetailsImpl userPrincipal) {
+	public ResponseCookie generateJwtCookie(UserDetailsImpl userPrincipal,boolean forcePwdChange) {
 		List<String> roles = userPrincipal.getAuthorities().stream().map(a -> a.getAuthority()).toList();
-		String jwt = generateTokenWithRoles(userPrincipal.getUsername(), roles);
+		String jwt = generateTokenWithRoles(userPrincipal.getUsername(), roles, forcePwdChange);
 		long maxAgeSec = jwtExpirationMs / 1000L;
 		return ResponseCookie.from(jwtCookieName, jwt).path("/").maxAge(maxAgeSec).httpOnly(true).build();
 	}
@@ -61,6 +62,7 @@ public class JwtUtils {
 		return ResponseCookie.from(jwtCookieName, "").path("/").maxAge(0).httpOnly(true).build();
 	}
 
+	// if token is in cookie, return it, else check header
 	public String getJwtFromCookies(HttpServletRequest request) {
 		Cookie cookie = WebUtils.getCookie(request, jwtCookieName);
 		if (cookie != null)

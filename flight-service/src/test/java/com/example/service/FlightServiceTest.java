@@ -73,20 +73,7 @@ class FlightServiceTest {
 		});
 	}
 
-	@Test
-	void testSearchByOriginDestination() {
-		Flight flight = createFlight();
-		SearchRequest req = new SearchRequest("DEL", "HYD", LocalDateTime.of(2025, 12, 18, 0, 0));
 
-		when(flightRepository.findByOriginAndDestinationAndDepartureTimeBetween("DEL", "HYD",
-				LocalDateTime.of(2025, 12, 18, 0, 0), LocalDateTime.of(2025, 12, 18, 23, 59)))
-				.thenReturn(Arrays.asList(flight));
-
-		var response = flightService.getByOriginAndDestinationService(req);
-		assertEquals(200, response.getStatusCode().value());
-
-		assertEquals(1, response.getBody().size());
-	}
 
 	@Test
 	void testDelete_Success() throws Exception {

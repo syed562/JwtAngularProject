@@ -1,11 +1,15 @@
 package com.example.authservice.controller;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.example.authservice.models.ChangePasswordRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -15,6 +19,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -49,14 +54,46 @@ public class AuthController {
 	@Autowired
 	RoleRepository roleRepository;
 
-	@Autowired 
+	@Autowired // bcrypt password encoder
 	PasswordEncoder encoder;
-	
+	// bcrypt encodes by default and decodes by matching hashes
 
 	@Autowired
 	JwtUtils jwtUtils;
 
+    //changing password controller
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            Authentication authentication,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        System.out.println("CONTROLLER HIT: change-password");
+        String username = authentication.getName();
 
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!encoder.matches(request.getOldPassword(), user.getPassword())) {
+            return ResponseEntity.badRequest().body("Error: Old password is incorrect");
+        }
+
+        if (encoder.matches(request.getNewPassword(), user.getPassword())) {
+            return ResponseEntity.badRequest().body("Error: New password must be different");
+        }
+
+        user.setPassword(encoder.encode(request.getNewPassword()));
+        user.setPasswordLastChangedAt(LocalDateTime.now());
+        user.setForcePasswordChange(false);
+
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Password changed successfully");
+    }
+
+
+    // @AuthenticationPrincipal UserDetailsImpl userDetails
+	// is NOT coming from the request body / query / headers.
+	// It is injected by Spring Security, after authentication succeeds.
+	// @AuthenticationPrincipal resolves from SecurityContext
 	@GetMapping("/me")
 	public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
@@ -78,8 +115,26 @@ public class AuthController {
 					new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
 			UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            User user = userRepository.findById(userDetails.getId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-			ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
+            if (user.isPasswordExpired()) {
+                user.setForcePasswordChange(true);
+                userRepository.save(user);
+
+                ResponseCookie jwtCookie =
+                        jwtUtils.generateJwtCookie(userDetails, true);
+
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                        .body(Map.of(
+                                "status", "PASSWORD_EXPIRED",
+                                "message", "Please change your password",
+                                "forcePasswordChange", true
+                        ));
+            }
+
+			ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails,user.isForcePasswordChange());
 
 			List<String> roles = userDetails.getAuthorities().stream().map(a -> a.getAuthority())
 					.collect(Collectors.toList());
@@ -104,14 +159,20 @@ public class AuthController {
 		}
 		System.out.println("Incoming roles: " + signUpRequest.getRoles());
 
-		User user = new User(signUpRequest.getUsername(), signUpRequest.getEmail(),
-				encoder.encode(signUpRequest.getPassword()));
+        User user = new User(
+                signUpRequest.getUsername(),
+                signUpRequest.getEmail(),
+                encoder.encode(signUpRequest.getPassword())
+        );
+
+        user.setPasswordLastChangedAt(LocalDateTime.now());
+        user.setForcePasswordChange(false);
 
 		Set<String> strRoles = signUpRequest.getRoles();
 		Set<Role> roles = new HashSet<>();
 
 		if (strRoles == null || strRoles.isEmpty()) {
-		
+			// default -> USER
 			Role userRole = roleRepository.findByName(ERole.ROLE_USER)
 					.orElseThrow(() -> new RuntimeException("Error: Role USER not found"));
 			roles.add(userRole);

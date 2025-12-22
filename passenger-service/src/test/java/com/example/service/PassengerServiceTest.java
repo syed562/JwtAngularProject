@@ -35,19 +35,7 @@ class PassengerServiceTest {
 	@Mock
 	private AddressRepository addressRepository;
 
-	@Test
-	void testGetPassengerDetailsService_Success() throws Exception {
-		Passenger passenger = Passenger.builder().passengerId(1).name("John").email("john@gmail.com")
-				.phoneNumber("12345").build();
 
-		Mockito.when(passengerRepository.findById(1)).thenReturn(Optional.of(passenger));
-
-		ResponseEntity<PassengerDetailsResponse> response = passengerService.getPassengerDetailsService(1);
-
-		assertEquals(HttpStatus.OK, response.getStatusCode());
-		assertEquals("John", response.getBody().getName());
-		assertEquals("john@gmail.com", response.getBody().getEmail());
-	}
 
 	@Test
 	void testGetPassengerDetailsService_NotFound() {

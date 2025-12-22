@@ -34,26 +34,27 @@ public class PassengerController {
 		return auth;
 	}
 
-	
+	// get request by id
 	@GetMapping("getByPassengerId/{id}")
 	public ResponseEntity<PassengerDetailsResponse> getPassengerDetails(@PathVariable int id)
 			throws ResourceNotFoundException {
 		return passengerService.getPassengerDetailsService(id);
 	}
 
+	// get id by email
 	@GetMapping("getPassengerIdByEmail/{email}")
 	public ResponseEntity<Integer> getIdByEmail(@PathVariable String email) throws ResourceNotFoundException {
 		return passengerService.getIdByEmailService(email);
 	}
 
-
+	// post request
 	@PostMapping("register")
 	public ResponseEntity<Integer> registerPassenger(@Valid @RequestBody PassengerDetailsRequest req) {
 		return passengerService.registerPassengerService(req);
 
 	}
 
-	
+	// delete request
 	@DeleteMapping("delete/{id}")
 	public ResponseEntity<String> deletePassenger(@PathVariable int id) throws ResourceNotFoundException {
 		return passengerService.deletePassengerService(id);

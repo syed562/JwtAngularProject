@@ -1,5 +1,6 @@
 package com.example.gateway.security;
-
+import org.springframework.stereotype.Component;
+import org.springframework.web.server.WebFilter;
 import java.util.List;
 
 import org.springframework.context.annotation.Bean;
@@ -15,82 +16,88 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 @Configuration
 public class GatewaySecurityConfig {
 
-	private final JwtAuthFilter jwtFilter;
+    private final JwtAuthFilter jwtFilter;
 
-	public GatewaySecurityConfig(JwtAuthFilter jwtFilter) {
-		this.jwtFilter = jwtFilter;
-	}
+    public GatewaySecurityConfig(JwtAuthFilter jwtFilter) {
+        this.jwtFilter = jwtFilter;
+    }
 
-	
-	@Bean
-	public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
 
-	    return http
-	        .csrf(ServerHttpSecurity.CsrfSpec::disable)
-	        .authorizeExchange(ex -> ex
+    @Bean
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
 
-	            .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+        return http
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(ex -> ex
 
-	           
-	            .pathMatchers(
-	                "/auth-service/api/auth/signup",
-	                "/auth-service/api/auth/signin",
-	                "/auth-service/api/auth/signout",
-	                "/auth-service/api/auth/me"
-	            ).permitAll()
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-	           
-	            .pathMatchers("/flight-service/flight/register").hasRole("ADMIN")
-	            .pathMatchers("/flight-service/flight/delete/**").hasRole("ADMIN")
-	            .pathMatchers("/flight-service/flight/getAllFlights")
-	                .hasAnyRole("ADMIN", "USER")
-	            .pathMatchers("/flight-service/flight/getFlightById/**")
-	                .hasAnyRole("ADMIN", "USER")
-	            .pathMatchers("/flight-service/flight/getByOriginDestinationDateTime")
-	                .hasAnyRole("ADMIN", "USER")
+                        // AUTH
+//                        .pathMatchers(
+//                                "/auth-service/api/auth/signup",
+//                                "/auth-service/api/auth/signin",
+//                                "/auth-service/api/auth/signout"
+//                        ).permitAll()
+//
+//                        .pathMatchers(
+//                                "/auth-service/api/auth/me",
+//                                "/auth-service/api/auth/change-password"
+//                        ).authenticated()
+                                .pathMatchers("/auth-service/api/auth/**").permitAll()
+                        // FLIGHT SERVICE
+                        .pathMatchers("/flight-service/flight/register").hasRole("ADMIN")
+                        .pathMatchers("/flight-service/flight/delete/**").hasRole("ADMIN")
+                        .pathMatchers("/flight-service/flight/getAllFlights")
+                        .hasAnyRole("ADMIN", "USER")
+                        .pathMatchers("/flight-service/flight/getFlightById/**")
+                        .hasAnyRole("ADMIN", "USER")
+                        .pathMatchers("/flight-service/flight/getByOriginDestinationDateTime")
+                        .hasAnyRole("ADMIN", "USER")
 
-	           
-                    .pathMatchers("/flight-service/flight/flights/*/reserve")
-                    .hasAnyRole("ADMIN", "USER")
-                    .pathMatchers("/flight-service/flight/flights/*/release")
-                    .hasAnyRole("ADMIN", "USER")
-	         
-	            .pathMatchers("/passenger-service/passenger/register")
-	                .hasAnyRole("ADMIN", "USER")
-	            .pathMatchers("/passenger-service/passenger/getByPassengerId/**")
-	                .hasAnyRole("ADMIN", "USER")
-	            .pathMatchers("/passenger-service/passenger/getPassengerIdByEmail/**")
-	                .hasAnyRole("ADMIN", "USER")
-	            .pathMatchers("/passenger-service/passenger/delete/**")
-	                .hasAnyRole("ADMIN", "USER")
+                        // SEAT MANAGEMENT (internal but same roles)
+                        .pathMatchers("/flight-service/flight/flights/*/reserve")
+                        .hasAnyRole("ADMIN", "USER")
+                        .pathMatchers("/flight-service/flight/flights/*/release")
+                        .hasAnyRole("ADMIN", "USER")
+                        // PASSENGER SERVICE
+                        .pathMatchers("/passenger-service/passenger/register")
+                        .hasAnyRole("ADMIN", "USER")
+                        .pathMatchers("/passenger-service/passenger/getByPassengerId/**")
+                        .hasAnyRole("ADMIN", "USER")
+                        .pathMatchers("/passenger-service/passenger/getPassengerIdByEmail/**")
+                        .hasAnyRole("ADMIN", "USER")
+                        .pathMatchers("/passenger-service/passenger/delete/**")
+                        .hasAnyRole("ADMIN", "USER")
 
-	            .pathMatchers("/ticket-service/ticket/book")
-	                .hasAnyRole("ADMIN", "USER")
-	            .pathMatchers("/ticket-service/ticket/getByPnr/**")
-	                .hasAnyRole("ADMIN", "USER")
-	            .pathMatchers("/ticket-service/ticket/getTicketsByEmail/**")
-	                .hasAnyRole("ADMIN", "USER")
+                        // TICKET SERVICE
+                        .pathMatchers("/ticket-service/ticket/book")
+                        .hasAnyRole("ADMIN", "USER")
+                        .pathMatchers("/ticket-service/ticket/getByPnr/**")
+                        .hasAnyRole("ADMIN", "USER")
+                        .pathMatchers("/ticket-service/ticket/getTicketsByEmail/**")
+                        .hasAnyRole("ADMIN", "USER")
 
-	            .anyExchange().authenticated()
-	        )
-	        .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)
-	        .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
-	        .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
-	        .build();
-	}
+                        // other services
+                        .anyExchange().authenticated()
+                )
+                .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+                .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
+                .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
+                .build();
+    }
 
-	@Bean
-	public CorsWebFilter corsWebFilter() {
-		CorsConfiguration config = new CorsConfiguration();
+    @Bean
+    public CorsWebFilter corsWebFilter() {
+        CorsConfiguration config = new CorsConfiguration();
 
-		config.setAllowedOrigins(List.of("http://localhost:4200"));
-		config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-		config.setAllowedHeaders(List.of("*"));
-		config.setAllowCredentials(true);
+        config.setAllowedOrigins(List.of("http://localhost:4200"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
 
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration("/**", config);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
 
-		return new CorsWebFilter(source);
-	}
+        return new CorsWebFilter(source);
+    }
 }

@@ -1,5 +1,6 @@
 package com.example.gateway.security;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Arrays;
 import java.util.List;
@@ -13,21 +14,39 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
+
 @Component
 public class JwtUtil {
 
 	@Value("${jwt.secret}")
 	private String jwtSecret;
 
-	private Key getSigningKey() {
-		byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-		return Keys.hmacShaKeyFor(keyBytes);
-	}
+//	private Key getSigningKey() {
+//		byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+//		return Keys.hmacShaKeyFor(keyBytes);
+//	}
+private Key getSigningKey() {
+    try {
+        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+        return Keys.hmacShaKeyFor(keyBytes);
+    } catch (IllegalArgumentException ex) {
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    }
+}
 
 	public Claims extractAllClaims(String token) {
 		return Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token).getBody();
 	}
+    public boolean getForcePwdChange(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
 
+        Boolean value = claims.get("forcePwdChange", Boolean.class);
+        return value != null && value;
+    }
 	public boolean validate(String token) {
 		try {
 			extractAllClaims(token);
