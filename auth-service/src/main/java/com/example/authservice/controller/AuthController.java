@@ -54,15 +54,46 @@ public class AuthController {
 	@Autowired
 	RoleRepository roleRepository;
 
-	@Autowired 
+	@Autowired // bcrypt password encoder
 	PasswordEncoder encoder;
-	
+	// bcrypt encodes by default and decodes by matching hashes
 
 	@Autowired
 	JwtUtils jwtUtils;
 
-   
+    //changing password controller
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            Authentication authentication,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        System.out.println("CONTROLLER HIT: change-password");
+        String username = authentication.getName();
 
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!encoder.matches(request.getOldPassword(), user.getPassword())) {
+            return ResponseEntity.badRequest().body("Error: Old password is incorrect");
+        }
+
+        if (encoder.matches(request.getNewPassword(), user.getPassword())) {
+            return ResponseEntity.badRequest().body("Error: New password must be different");
+        }
+
+        user.setPassword(encoder.encode(request.getNewPassword()));
+        user.setPasswordLastChangedAt(LocalDateTime.now());
+        user.setForcePasswordChange(false);
+
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Password changed successfully");
+    }
+
+
+    // @AuthenticationPrincipal UserDetailsImpl userDetails
+	// is NOT coming from the request body / query / headers.
+	// It is injected by Spring Security, after authentication succeeds.
+	// @AuthenticationPrincipal resolves from SecurityContext
 	@GetMapping("/me")
 	public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetailsImpl userDetails) {
 
@@ -141,7 +172,7 @@ public class AuthController {
 		Set<Role> roles = new HashSet<>();
 
 		if (strRoles == null || strRoles.isEmpty()) {
-			
+			// default -> USER
 			Role userRole = roleRepository.findByName(ERole.ROLE_USER)
 					.orElseThrow(() -> new RuntimeException("Error: Role USER not found"));
 			roles.add(userRole);
@@ -174,31 +205,4 @@ public class AuthController {
 		return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cleanCookie.toString())
 				.body(new MessageResponse("You've been signed out!"));
 	}
-	 @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(
-            Authentication authentication,
-            @Valid @RequestBody ChangePasswordRequest request) {
-        System.out.println("CONTROLLER HIT: change-password");
-        String username = authentication.getName();
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        if (!encoder.matches(request.getOldPassword(), user.getPassword())) {
-            return ResponseEntity.badRequest().body("Error: Old password is incorrect");
-        }
-
-        if (encoder.matches(request.getNewPassword(), user.getPassword())) {
-            return ResponseEntity.badRequest().body("Error: New password must be not equal to previous one");
-        }
-
-        user.setPassword(encoder.encode(request.getNewPassword()));
-        user.setPasswordLastChangedAt(LocalDateTime.now());
-        user.setForcePasswordChange(false);
-
-        userRepository.save(user);
-
-        return ResponseEntity.ok("Password is changed successfully");
-    }
-
 }

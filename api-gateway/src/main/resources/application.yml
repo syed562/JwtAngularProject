@@ -1,0 +1,63 @@
+server:
+  port: 8765
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+
+      # We are defining routes manually
+      discovery:
+        locator:
+          enabled: false
+
+      routes:
+
+        # ================= AUTH SERVICE =================
+        - id: auth-service
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=0
+
+        # ================= FLIGHT SERVICE =================
+        - id: flight-service
+          uri: lb://FLIGHT-SERVICE
+          predicates:
+            - Path=/flight/**
+          filters:
+            - StripPrefix=0
+
+        # ================= PASSENGER SERVICE =================
+        - id: passenger-service
+          uri: lb://PASSENGER-SERVICE
+          predicates:
+            - Path=/passenger/**
+          filters:
+            - StripPrefix=0
+
+        # ================= TICKET SERVICE =================
+        - id: ticket-service
+          uri: lb://TICKET-SERVICE
+          predicates:
+            - Path=/ticket/**
+          filters:
+            - StripPrefix=0
+
+# ================= EUREKA =================
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka
+  instance:
+    prefer-ip-address: true
+
+# ================= JWT =================
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 3600000

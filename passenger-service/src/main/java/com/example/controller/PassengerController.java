@@ -41,21 +41,20 @@ public class PassengerController {
 		return passengerService.getPassengerDetailsService(id);
 	}
 
-	
-	@GetMapping("getPassengerIdByEmail/{email}")
+	PassengerIdByEmail/{email}")
 	public ResponseEntity<Integer> getIdByEmail(@PathVariable String email) throws ResourceNotFoundException {
 		return passengerService.getIdByEmailService(email);
 	}
 
 
-	@PostMapping("register")
+egister")
 	public ResponseEntity<Integer> registerPassenger(@Valid @RequestBody PassengerDetailsRequest req) {
 		return passengerService.registerPassengerService(req);
 
 	}
 
 	
-	@DeleteMapping("delete/{id}")
+	elete/{id}")
 	public ResponseEntity<String> deletePassenger(@PathVariable int id) throws ResourceNotFoundException {
 		return passengerService.deletePassengerService(id);
 	}
