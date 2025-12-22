@@ -27,13 +27,11 @@ public class PassengerController {
 		this.passengerService = passengerService;
 	}
 
-	@GetMapping("/debug")
-	public String debug(HttpServletRequest request) {
-		String auth = request.getHeader("Authorization");
-		System.out.println("PASSENGER SERVICE RECEIVED TOKEN = " + auth);
-		return auth;
-	}
+	@PostMapping("register")
+	public ResponseEntity<Integer> registerPassenger(@Valid @RequestBody PassengerDetailsRequest req) {
+		return passengerService.registerPassengerService(req);
 
+	}
 	
 	@GetMapping("getByPassengerId/{id}")
 	public ResponseEntity<PassengerDetailsResponse> getPassengerDetails(@PathVariable int id)
@@ -41,22 +39,24 @@ public class PassengerController {
 		return passengerService.getPassengerDetailsService(id);
 	}
 
-	PassengerIdByEmail/{email}")
+	
+	@GetMapping("getPassengerIdByEmail/{email}")
 	public ResponseEntity<Integer> getIdByEmail(@PathVariable String email) throws ResourceNotFoundException {
 		return passengerService.getIdByEmailService(email);
 	}
 
-
-egister")
-	public ResponseEntity<Integer> registerPassenger(@Valid @RequestBody PassengerDetailsRequest req) {
-		return passengerService.registerPassengerService(req);
-
-	}
-
 	
-	elete/{id}")
+	@DeleteMapping("delete/{id}")
 	public ResponseEntity<String> deletePassenger(@PathVariable int id) throws ResourceNotFoundException {
 		return passengerService.deletePassengerService(id);
+	}
+
+
+	@GetMapping("/debug")
+	public String debug(HttpServletRequest request) {
+		String auth = request.getHeader("Authorization");
+		System.out.println("PASSENGER SERVICE RECEIVED TOKEN = " + auth);
+		return auth;
 	}
 
 }
