@@ -29,20 +29,19 @@ public class JwtAuthFilter implements WebFilter {
         String path = exchange.getRequest().getURI().getPath();
         System.out.println("GATEWAY FILTER HIT: " + exchange.getRequest().getMethod() + " " + path);
 
-        // public auth endpoints
+       
         if (path.equals("/auth-service/api/auth/signin")
                 || path.equals("/auth-service/api/auth/signup")
                 || path.equals("/auth-service/api/auth/signout")) {
             return chain.filter(exchange);
         }
 
-        // cookie FIRST
         String token = null;
         if (exchange.getRequest().getCookies().getFirst("asrithaCookie") != null) {
             token = exchange.getRequest().getCookies().getFirst("asrithaCookie").getValue();
         }
 
-        // fallback header
+       
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (token == null && authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
@@ -50,13 +49,13 @@ public class JwtAuthFilter implements WebFilter {
 
         boolean isAuthService = path.startsWith("/auth-service/api/auth/");
 
-        // block only NON-auth services
+      
         if (!isAuthService && (token == null || !jwtUtil.validate(token))) {
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
         }
 
-        // build authentication if token valid
+       
         if (token != null && jwtUtil.validate(token)) {
             String username = jwtUtil.extractUsername(token);
             List<String> roles = jwtUtil.extractRoles(token);
