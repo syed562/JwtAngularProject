@@ -166,7 +166,7 @@ this.kafkaTemplate = kafkaTemplate;
 		if (passengerId == null)
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(List.of());
 
-		// safety check
+		
 		ResponseEntity<PassengerDetailsResponse> passengerResp = passengerInterface.getPassengerDetails(passengerId);
 		if (passengerResp == null || passengerResp.getBody() == null) {
 			throw new ResourceNotFoundException("Passenger details unavailable");
@@ -177,7 +177,7 @@ this.kafkaTemplate = kafkaTemplate;
 
 		List<TicketResponse> responseList = tickets.stream().map(ticket -> {
 
-			// safety check
+		
 			ResponseEntity<FlightResponse> fResp = flightInterface.getByID(ticket.getFlightId());
 			if (fResp == null || fResp.getBody() == null) {
 				throw new ResourceNotFoundException("Flight details unavailable");
