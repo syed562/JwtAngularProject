@@ -28,7 +28,7 @@ public class JwtUtils {
 	@Value("${bezkoder.app.jwtExpirationMs}")
 	private int jwtExpirationMs;
 
-	@Value("${bezkoder.app.jwtCookieName:asrithaCookie}")
+	@Value("${bezkoder.app.jwtCookieName:sabiCookie}")
 	private String jwtCookieName;
 
 	private Key key() {
