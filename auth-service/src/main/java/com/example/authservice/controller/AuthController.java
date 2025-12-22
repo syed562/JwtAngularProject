@@ -54,14 +54,13 @@ public class AuthController {
 	@Autowired
 	RoleRepository roleRepository;
 
-	@Autowired // bcrypt password encoder
+	@Autowired 
 	PasswordEncoder encoder;
-	// bcrypt encodes by default and decodes by matching hashes
 
 	@Autowired
 	JwtUtils jwtUtils;
 
-    //changing password controller
+    
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(
             Authentication authentication,
@@ -90,10 +89,6 @@ public class AuthController {
     }
 
 
-    // @AuthenticationPrincipal UserDetailsImpl userDetails
-	// is NOT coming from the request body / query / headers.
-	// It is injected by Spring Security, after authentication succeeds.
-	// @AuthenticationPrincipal resolves from SecurityContext
 	@GetMapping("/me")
 	public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserDetailsImpl userDetails) {
 

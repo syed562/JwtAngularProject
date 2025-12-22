@@ -21,10 +21,7 @@ public class JwtUtil {
 	@Value("${jwt.secret}")
 	private String jwtSecret;
 
-//	private Key getSigningKey() {
-//		byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
-//		return Keys.hmacShaKeyFor(keyBytes);
-//	}
+
 private Key getSigningKey() {
     try {
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);

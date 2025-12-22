@@ -38,8 +38,8 @@ public class JwtAuthFilter implements WebFilter {
 
     
         String token = null;
-        if (exchange.getRequest().getCookies().getFirst("asrithaCookie") != null) {
-            token = exchange.getRequest().getCookies().getFirst("asrithaCookie").getValue();
+        if (exchange.getRequest().getCookies().getFirst("sabiCookie") != null) {
+            token = exchange.getRequest().getCookies().getFirst("sabiCookie").getValue();
         }
 
        

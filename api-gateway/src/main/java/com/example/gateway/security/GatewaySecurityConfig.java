@@ -22,54 +22,7 @@ public class GatewaySecurityConfig {
     }
 
 
-    // @Bean
-    // public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
-
-    //     return http
-    //             .csrf(ServerHttpSecurity.CsrfSpec::disable)
-    //             .authorizeExchange(ex -> ex
-
-    //                     .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-  
-    //                             .pathMatchers("/auth-service/api/auth/**").permitAll()
-                     
-    //                     .pathMatchers("/flight-service/flight/register").hasRole("ADMIN")
-    //                     .pathMatchers("/flight-service/flight/delete/**").hasRole("ADMIN")
-    //                     .pathMatchers("/flight-service/flight/getAllFlights")
-    //                     .hasAnyRole("ADMIN", "USER")
-    //                     .pathMatchers("/flight-service/flight/getFlightById/**")
-    //                     .hasAnyRole("ADMIN", "USER")
-    //                     .pathMatchers("/flight-service/flight/getByOriginDestinationDateTime")
-    //                     .hasAnyRole("ADMIN", "USER")
-
-    //                    .pathMatchers("/passenger-service/passenger/register")
-    //                     .hasAnyRole("ADMIN", "USER")
-    //                     .pathMatchers("/passenger-service/passenger/getByPassengerId/**")
-    //                     .hasAnyRole("ADMIN", "USER")
-    //                     .pathMatchers("/passenger-service/passenger/getPassengerIdByEmail/**")
-    //                     .hasAnyRole("ADMIN", "USER")
-    //                     .pathMatchers("/passenger-service/passenger/delete/**")
-    //                     .hasAnyRole("ADMIN", "USER")
-
-
-                        
-    //                     .pathMatchers("/flight-service/flight/flights/*/reserve")
-    //                     .hasAnyRole("ADMIN", "USER")
-    //                     .pathMatchers("/flight-service/flight/flights/*/release")
-    //                     .hasAnyRole("ADMIN", "USER")
-                        
-                     
-                        
-
-                      
-    //                     .anyExchange().authenticated()
-    //             )
-    //             .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)
-    //             .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
-    //             .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
-    //             .build();
-    // }
+ 
 @Bean
 public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
     return http
