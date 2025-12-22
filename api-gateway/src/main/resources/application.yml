@@ -8,14 +8,14 @@ spring:
   cloud:
     gateway:
 
-      # We are defining routes manually
+     
       discovery:
         locator:
           enabled: false
 
       routes:
 
-        # ================= AUTH SERVICE =================
+       
         - id: auth-service
           uri: lb://AUTH-SERVICE
           predicates:
@@ -23,7 +23,7 @@ spring:
           filters:
             - StripPrefix=0
 
-        # ================= FLIGHT SERVICE =================
+        
         - id: flight-service
           uri: lb://FLIGHT-SERVICE
           predicates:
@@ -31,7 +31,6 @@ spring:
           filters:
             - StripPrefix=0
 
-        # ================= PASSENGER SERVICE =================
         - id: passenger-service
           uri: lb://PASSENGER-SERVICE
           predicates:
@@ -39,7 +38,7 @@ spring:
           filters:
             - StripPrefix=0
 
-        # ================= TICKET SERVICE =================
+        
         - id: ticket-service
           uri: lb://TICKET-SERVICE
           predicates:
@@ -47,7 +46,7 @@ spring:
           filters:
             - StripPrefix=0
 
-# ================= EUREKA =================
+
 eureka:
   client:
     register-with-eureka: true
@@ -57,7 +56,6 @@ eureka:
   instance:
     prefer-ip-address: true
 
-# ================= JWT =================
 jwt:
   secret: ${JWT_SECRET}
   expiration: 3600000

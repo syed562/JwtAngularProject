@@ -1,6 +1,4 @@
 package com.example.gateway.security;
-import org.springframework.stereotype.Component;
-import org.springframework.web.server.WebFilter;
 import java.util.List;
 
 import org.springframework.context.annotation.Bean;
@@ -32,19 +30,9 @@ public class GatewaySecurityConfig {
 
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // AUTH
-//                        .pathMatchers(
-//                                "/auth-service/api/auth/signup",
-//                                "/auth-service/api/auth/signin",
-//                                "/auth-service/api/auth/signout"
-//                        ).permitAll()
-//
-//                        .pathMatchers(
-//                                "/auth-service/api/auth/me",
-//                                "/auth-service/api/auth/change-password"
-//                        ).authenticated()
+  
                                 .pathMatchers("/auth-service/api/auth/**").permitAll()
-                        // FLIGHT SERVICE
+                     
                         .pathMatchers("/flight-service/flight/register").hasRole("ADMIN")
                         .pathMatchers("/flight-service/flight/delete/**").hasRole("ADMIN")
                         .pathMatchers("/flight-service/flight/getAllFlights")
@@ -54,13 +42,7 @@ public class GatewaySecurityConfig {
                         .pathMatchers("/flight-service/flight/getByOriginDestinationDateTime")
                         .hasAnyRole("ADMIN", "USER")
 
-                        // SEAT MANAGEMENT (internal but same roles)
-                        .pathMatchers("/flight-service/flight/flights/*/reserve")
-                        .hasAnyRole("ADMIN", "USER")
-                        .pathMatchers("/flight-service/flight/flights/*/release")
-                        .hasAnyRole("ADMIN", "USER")
-                        // PASSENGER SERVICE
-                        .pathMatchers("/passenger-service/passenger/register")
+                       .pathMatchers("/passenger-service/passenger/register")
                         .hasAnyRole("ADMIN", "USER")
                         .pathMatchers("/passenger-service/passenger/getByPassengerId/**")
                         .hasAnyRole("ADMIN", "USER")
@@ -69,15 +51,17 @@ public class GatewaySecurityConfig {
                         .pathMatchers("/passenger-service/passenger/delete/**")
                         .hasAnyRole("ADMIN", "USER")
 
-                        // TICKET SERVICE
-                        .pathMatchers("/ticket-service/ticket/book")
-                        .hasAnyRole("ADMIN", "USER")
-                        .pathMatchers("/ticket-service/ticket/getByPnr/**")
-                        .hasAnyRole("ADMIN", "USER")
-                        .pathMatchers("/ticket-service/ticket/getTicketsByEmail/**")
-                        .hasAnyRole("ADMIN", "USER")
 
-                        // other services
+                        
+                        .pathMatchers("/flight-service/flight/flights/*/reserve")
+                        .hasAnyRole("ADMIN", "USER")
+                        .pathMatchers("/flight-service/flight/flights/*/release")
+                        .hasAnyRole("ADMIN", "USER")
+                        
+                     
+                        
+
+                      
                         .anyExchange().authenticated()
                 )
                 .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)
